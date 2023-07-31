@@ -1,0 +1,11 @@
+,index,call_stack,all_func_names,num_calls,severity,exclusive_runtimes,TotalRuntimeSum(AllFunc),severity_trunc,sev_bin_upper_bound
+0,263,61a3b0,hipLaunchKernel,4,1.0,4777004,,1.0,1.0
+1,4156,de3a76,hipLaunchKernel,1,0.9475503893235174,4526452,,0.94,1.0
+2,0,8ceacb,hipLaunchKernel,20,0.9379759782491284,4480715,101734494.0,0.93,1.0
+3,4104,3f7b17,hipLaunchKernel,1,0.9306770519765108,4445848,,0.93,1.0
+4,2062,db8018,hipLaunchKernel,1,0.903563405012849,4316326,,0.9,1.0
+5,1925,5be719,hipLaunchKernel,1,0.900547497971532,4301919,,0.9,1.0
+6,1937,233a55,hipLaunchKernel,1,0.8861250691856235,4233023,,0.88,0.9
+7,2067,0140e0,hipLaunchKernel,1,0.8289852803137698,3960066,,0.82,0.9
+8,3764,03d855,"OpenMP_Parallel_Region void Grid::GridParallelRNG::fill<Grid::iScalar<Grid::iVector<Grid::iVector<Grid::Grid_simd<thrust::complex<double>, Grid::GpuVector<4, Grid::GpuComplex<HIP_vector_type<double, 2u> > > >, 3>, 4> >, std::normal_distribution<double> >(Grid::Lattice<Grid::iScalar<Grid::iVector<Grid::iVector<Grid::Grid_simd<thrust::complex<double>, Grid::GpuVector<4, Grid::GpuComplex<HIP_vector_type<double, 2u> > > >, 3>, 4> > >&, std::vector<std::normal_distribution<double>, std::allocator<std::normal_distribution<double> > >&) [{/autofs/nccs-svm1_home1/ckelly/bld/Grid_crusher_Xconj_PrgEnv-amd_TAUinst_select/HMC/Mobius2p1fIwasakiXconj3dirs_16I} {0, 0}]",4,0.1738229651890599,830353,,0.17,0.2
+9,7522,2e7437,"Grid::ConjugateGradientReliableUpdate<Grid::Lattice<Grid::iScalar<Grid::iVector<Grid::iVector<Grid::Grid_simd<thrust::complex<double>, Grid::GpuVector<4, Grid::GpuComplex<HIP_vector_type<double, 2u> > > >, 3>, 4> > >, Grid::Lattice<Grid::iScalar<Grid::iVector<Grid::iVector<Grid::Grid_simd<thrust::complex<float>, Grid::GpuVector<8, Grid::GpuComplex<HIP_vector_type<float, 2u> > > >, 3>, 4> > >, 0, 0>::operator()(Grid::Lattice<Grid::iScalar<Grid::iVector<Grid::iVector<Grid::Grid_simd<thrust::complex<double>, Grid::GpuVector<4, Grid::GpuComplex<HIP_vector_type<double, 2u> > > >, 3>, 4> > > const&, Grid::Lattice<Grid::iScalar<Grid::iVector<Grid::iVector<Grid::Grid_simd<thrust::complex<double>, Grid::GpuVector<4, Grid::GpuComplex<HIP_vector_type<double, 2u> > > >, 3>, 4> > >&) [{/autofs/nccs-svm1_home1/ckelly/src/Grid_crusher_Xconj/Grid/Grid/algorithms/iterative/ConjugateGradientReliableUpdate.h} {75}]",7,0.0802341802518901,383279,,0.08,0.1
