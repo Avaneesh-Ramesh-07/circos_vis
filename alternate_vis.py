@@ -7,6 +7,7 @@ import json
 import urllib.request as urlreq
 from dash import Dash, html, dcc, Input, Output, State, callback
 import dash_bio as dashbio
+import pickle
 
 from sklearn.preprocessing import RobustScaler
 from sklearn.preprocessing import MinMaxScaler
@@ -30,7 +31,7 @@ text_config = {
     },
 }
 
-chords_config = {"color": "RdYlBu",
+chords_config = {"color": "Spectral",
                  "opacity": 0.8,
                  'tooltipContent': {
                      'source': 'source',
@@ -148,7 +149,8 @@ def get_nodes_rmve_empty(input_dict, color_list, file_name_limit):
     # get dictionary that represents number of calls of certain call stack
 
     # will retain order with corresponding call_stack
-    color_list = ["#232023", "#A7A6BA", "#808080", "#C5C6D0", "#D3D3D3"]
+    #color_list = ["#232023", "#A7A6BA", "#808080", "#C5C6D0", "#D3D3D3"]
+    color_list = ["#00B571", "#FF9633", "#F633FF", "#335BFF", "#33FFB2"]
     index=0
     for i in os.listdir("filtered_inp_files/only_rem_duplicates/"):
         original_df = pd.read_csv(
@@ -206,7 +208,8 @@ def get_nodes_rmve_none(input_dict, color_list, file_name_limit):
 
     # will retain order with corresponding call_stack
 
-    color_list = ["#232023", "#A7A6BA", "#808080", "#C5C6D0", "#D3D3D3"]
+    #color_list = ["#232023", "#A7A6BA", "#808080", "#C5C6D0", "#D3D3D3"]
+    color_list = ["#00B571", "#FF9633", "#F633FF", "#335BFF", "#33FFB2"]
     index=0
     for i in os.listdir("filtered_inp_files/only_rem_duplicates/"):
         original_df = pd.read_csv(
@@ -430,7 +433,7 @@ def reevaluate_nodes(input_dict):
 
 def reevaluate_chords(input_dict):
     #assign color values based on number of connections for graphs 1 and 2 (individual, independent graphs will be evaluated in the filter_nodes function)
-    value_list = [1, 0.5, 0]
+    value_list = [1.0, 0.3, 0.1]
     all_node_id = []
     for dict in input_dict["Nodes"]:
         all_node_id.append(dict['id'])
@@ -458,7 +461,7 @@ def check_num_connections(node_id, input_dict):
 
 def filter_nodes(original_dict, num_connections):
     #value_list = [0, 0.5, 1.0]
-    value_list = [1, 0.5, 0] #will need to be extended if more than 4 dumps are being compared
+    value_list = [1.0, 0.3, 0.1] #will need to be extended if more than 4 dumps are being compared
     #filters nodes by number of connections
     nodes_to_delete=[]
     for node in original_dict["Nodes"]:
@@ -538,7 +541,8 @@ if __name__ == '__main__':
 
 
     """
-
+    argv = sys.argv
+    del argv[0]
     # gathering and prepping all dataframes
 
     """argv = sys.argv
@@ -585,75 +589,88 @@ if __name__ == '__main__':
     input_dict = get_nodes(df_list, input_dict, color_list, file_name_list)
 
     input_dict = get_chords(input_dict, file_name_list, value_list, file_name_limit, top_num_func)"""
-    input_dict = {"Nodes": [], "Chords": []}
-    """
-    Blue: "#797EF6"
-    Orange: "#FF781F"
-    Red: "#FF781F"
-    """
-    #color_list = ["#797EF6", "#FF781F", "#B30000","#AFE1AF"]
-    color_list = ["#FF7417", "#FB607F", "777B7E", "#708238"] #no Red, Blue, or Yellow to conflict with chords
+    if "-f" in argv:
+        input_dict = {"Nodes": [], "Chords": []}
+        """
+        Blue: "#797EF6"
+        Orange: "#FF781F"
+        Red: "#FF781F"
+        """
+        #color_list = ["#797EF6", "#FF781F", "#B30000","#AFE1AF"]
 
-    file_name_limit=3
-    input_dict = get_nodes_rmve_empty(input_dict, color_list, file_name_limit)
-    #print(input_dict)
-    text_info = get_text(input_dict)
+        color_list = ["#FF7417", "#FB607F", "777B7E", "#708238"] #no Red, Blue, or Yellow to conflict with chords
 
-    file_name_dict={}
-    for i in os.listdir("filtered_inp_files/only_rem_duplicates/"):
-        file_name_dict["filtered_inp_files/only_rem_duplicates/"+i]=i[0:file_name_limit]
-    #print(file_name_dict)
+        file_name_limit = 2
+        input_dict = get_nodes_rmve_empty(input_dict, color_list, file_name_limit)
+        #print(input_dict)
+        text_info = get_text(input_dict)
 
-    input_dict = get_chords(input_dict, file_name_dict)
-    input_dict = reevaluate_chords(input_dict)
-    #print(input_dict)
+        file_name_dict={}
+        for i in os.listdir("filtered_inp_files/only_rem_duplicates/"):
+            file_name_dict["filtered_inp_files/only_rem_duplicates/"+i]=i[0:file_name_limit]
+        #print(file_name_dict)
+
+        input_dict = get_chords(input_dict, file_name_dict)
+        input_dict = reevaluate_chords(input_dict)
+        #print(input_dict)
 
 
-    input_dict_2={"Nodes": [], "Chords": []}
-    input_dict_2=get_nodes_rmve_none(input_dict_2, color_list, file_name_limit)
+        input_dict_2={"Nodes": [], "Chords": []}
+        input_dict_2=get_nodes_rmve_none(input_dict_2, color_list, file_name_limit)
 
-    for chord in input_dict["Chords"]:
-        input_dict_2["Chords"].append(chord)
+        for chord in input_dict["Chords"]:
+            input_dict_2["Chords"].append(chord)
 
-    for i in range(11):
-        # the color pallete value parameter won't work unless you have variance, so this piece of code adds a tiny, tiny chord of every color which tricks the color pallete
-        input_dict["Chords"].append({
-            "source": {
+        for i in range(11):
+            # the color pallete value parameter won't work unless you have variance, so this piece of code adds a tiny, tiny chord of every color which tricks the color pallete
+            input_dict["Chords"].append({
+                "source": {
 
-                "id": input_dict["Nodes"][0]['id'],
-                "start": 0,
-                "end": 0.00000005
-            },
-            "target": {
-                "id": input_dict["Nodes"][1]['id'],
-                "start": 0,
-                "end": 0.000000005
-            },
+                    "id": input_dict["Nodes"][0]['id'],
+                    "start": 0,
+                    "end": 0.00000005
+                },
+                "target": {
+                    "id": input_dict["Nodes"][1]['id'],
+                    "start": 0,
+                    "end": 0.000000005
+                },
 
-            "value": float(i / 10)
-        })
-    #input_dict_2 = get_chords(input_dict_2, file_name_dict, value_list)
-    input_dict_2 = reevaluate_chords(input_dict_2)
+                "value": float(i / 10)
+            })
+        #input_dict_2 = get_chords(input_dict_2, file_name_dict, value_list)
+        input_dict_2 = reevaluate_chords(input_dict_2)
 
-    for i in range(11):
-        # the color pallete value parameter won't work unless you have variance, so this piece of code adds a tiny, tiny chord of every color which tricks the color pallete
-        input_dict_2["Chords"].append({
-            "source": {
+        for i in range(11):
+            # the color pallete value parameter won't work unless you have variance, so this piece of code adds a tiny, tiny chord of every color which tricks the color pallete
+            input_dict_2["Chords"].append({
+                "source": {
 
-                "id": input_dict["Nodes"][0]['id'],
-                "start": 0,
-                "end": 0.00000005
-            },
-            "target": {
-                "id": input_dict["Nodes"][1]['id'],
-                "start": 0,
-                "end": 0.000000005
-            },
+                    "id": input_dict["Nodes"][0]['id'],
+                    "start": 0,
+                    "end": 0.00000005
+                },
+                "target": {
+                    "id": input_dict["Nodes"][1]['id'],
+                    "start": 0,
+                    "end": 0.000000005
+                },
 
-            "value": float(i / 10)
-        })
-    #print(input_dict_2)
-    text_info_2 = get_text(input_dict_2)
+                "value": float(i / 10)
+            })
+        #print(input_dict_2)
+        text_info_2 = get_text(input_dict_2)
+        with open('cache/input_d1.pkl', 'wb') as f:
+            pickle.dump(input_dict, f)
+        with open('cache/input_d2.pkl', 'wb') as f:
+            pickle.dump(input_dict_2, f)
+    else:
+        with open('cache/input_d1.pkl', 'rb') as f:
+            input_dict = pickle.load(f)
+        with open('cache/input_d2.pkl', 'rb') as f:
+            input_dict_2 = pickle.load(f)
+        text_info = get_text(input_dict)
+        text_info_2 = get_text(input_dict_2)
     """for node in input_dict["Nodes"]:
         input_dict_2["Nodes"].append(node)
     for chord in input_dict["Chords"]:
@@ -667,6 +684,14 @@ if __name__ == '__main__':
     # app and callback configuration
 
     children_for_graph=[]
+    children_for_graph.append(dcc.Checklist(
+        id="checklist",
+       options=[
+           {'label': '126', 'value': '126'},
+           {'label': '253', 'value': '253'}
+       ],
+        value=[]
+))
 
     graph = dashbio.Circos(
                     id="hpc_circos_no_chord_data",
@@ -674,7 +699,7 @@ if __name__ == '__main__':
                     layout=input_dict["Nodes"],
                     config=layout_config,
                     tracks=[
-                        {"type": "CHORDS", "data": input_dict["Chords"], "config": chords_config, 'id': "chords",},
+                        {"type": "CHORDS", "data": input_dict["Chords"], "config": chords_config, 'id': "chords_no_chord_data",},
                         {"type": "TEXT", "data": text_info, "config": text_config},
                         ],
         enableDownloadSVG=True
@@ -699,7 +724,7 @@ if __name__ == '__main__':
                     layout=input_dict_2["Nodes"],
                     config=layout_config,
                     tracks=[
-                        {"type": "CHORDS", "data": input_dict_2["Chords"], "config": chords_config, 'id': "chords", },
+                        {"type": "CHORDS", "data": input_dict_2["Chords"], "config": chords_config, 'id': "chords_with_chord_data", },
                         {"type": "TEXT", "data": text_info_2, "config": text_config},
 
                     ],
@@ -735,7 +760,7 @@ if __name__ == '__main__':
                 layout=new_dict["Nodes"],
                 config=layout_config,
                 tracks=[
-                    {"type": "CHORDS", "data": new_dict["Chords"], "config": chords_config, 'id': "chords", },
+                    {"type": "CHORDS", "data": new_dict["Chords"], "config": chords_config, 'id': "chords_"+str(i+1), },
                     {"type": "TEXT", "data": new_text_info, "config": text_config},
                 ],
             enableDownloadSVG=True
@@ -803,6 +828,33 @@ if __name__ == '__main__':
     )"""
 
 
+    """@callback(
+        #Output("hpc_circos_with_chord_data", "layout"),
+        Output("hpc_circos_with_chord_data", "eventDatum"),
+        Input('checklist', "value")
+    )
+    def update_output(value):
+        test_dict={"Nodes":[], "Chords":[]}
+        for chord in input_dict["Chords"]:
+            test_dict["Chords"].append(chord)
+        for node in input_dict["Nodes"]:
+            test_dict["Nodes"].append(node)
+        if value is None: value = []
+
+        for input in value:
+            index = 0
+            for i in test_dict["Nodes"]:
+                if input in i["id"]:
+                    del test_dict["Nodes"][index]
+                    index-=1
+                index+=1
+            index=0
+            for i in test_dict["Chords"]:
+                if input in i["source"]["id"] or input in i["target"]["id"]:
+                    del test_dict["Chords"][index]
+                    index-=1
+                index+=1
+        return test_dict["Chords"]#, input_dict["Chords"]"""
 
 
 
@@ -812,7 +864,10 @@ if __name__ == '__main__':
     )
     def update_output(value):
 
+
+
         if (value is not None):
+            print(value)
             output_string = ""
             output_string += "This chord, representing call stack, " + value["call_stack"][:len(value["call_stack"]) - 3] + ", goes from " + \
                              value["source"]["id"] + " (of severity:  " + str(value["source_severity"]) + ") to " + \

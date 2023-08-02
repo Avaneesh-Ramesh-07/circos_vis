@@ -720,6 +720,11 @@ def extended_info_to_csv(file_name_limit):
     df=df.drop(['Unnamed: 0', 'index', 'all_func_names', 'severity_trunc', 'TotalRuntimeSum(AllFunc)', 'num_calls', 'severity', 'sev_bin_upper_bound'], axis='columns')
     df.drop_duplicates(subset='call_stack', inplace=True)
     df.sort_values(by="exclusive_runtimes", ascending=False, inplace=True)
+
+    #can be removed, but it's just to lessen the load:
+
+    df = df.head(10)
+
     df.to_csv("filtered_inp_files/func_data/combined_func_data.csv")
     print(df)
 
@@ -876,12 +881,12 @@ def main():
         "inp_for_circos/Grid-Xconj_evol_16c-repeat_1rank-chimbuko_309131-provdb.json",
     ]
 
-    input_file_list = [
+    """input_file_list = [
         "inp_for_circos/Grid-Xconj_evol_16c-model_reuse-chimbuko_306104-provdb.json",
         "inp_for_circos/Grid-Xconj_evol_16c-model_reuse-chimbuko_306124-provdb.json",
         "inp_for_circos/Grid-Xconj_evol_16c-model_reuse-chimbuko_306253-provdb.json",
         "inp_for_circos/Grid-Xconj_evol_16c-model_reuse-chimbuko_309126-provdb.json"
-    ]
+    ]"""
     """input_file_list = [
         "inp_for_circos/Grid-Xconj_evol_16c-repeat_1rank-chimbuko_304740-provdb.json",
         "inp_for_circos/Grid-Xconj_evol_16c-repeat_1rank-chimbuko_304740-provdb.json"
@@ -895,10 +900,10 @@ def main():
         #basic_info_to_df(obj, 'filtered_inp_files/'+input_file_list[i][15:75]+'.csv')
 
         print("OUTPUTTING FILES TO UNFILTERED INP FILES FOLDER\n")
-        #basic_info_to_df(obj, 'unfiltered_inp_files/' + input_file_list[i][61:63] +'.csv')
-        basic_info_to_df(obj, 'unfiltered_inp_files/' + input_file_list[i][59:62] + '.csv')
+        basic_info_to_df(obj, 'unfiltered_inp_files/' + input_file_list[i][61:63] +'.csv')
+        #basic_info_to_df(obj, 'unfiltered_inp_files/' + input_file_list[i][59:62] + '.csv')
     print("CALCULATING EXTENDED INFORMATION\n")
-    extended_info_to_csv(3)
+    extended_info_to_csv(2)
 
     #print("GETTING CHORD DATA\n")
     #get_chord_info()
