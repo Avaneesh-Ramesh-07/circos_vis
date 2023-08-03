@@ -137,6 +137,22 @@ def reverse(lst):
    new_lst = lst[::-1]
    return new_lst
 
+def create_node_length(original_df, call_stack):
+    #calculate total_runtime
+    combined_func_df = pd.read_csv("filtered_inp_files/func_data/combined_func_data.csv")
+    total_runtime=0
+    for chosen_call_stack in combined_func_df["call_stack"]:
+        for i in range(len(original_df['call_stack'])):
+            if chosen_call_stack == original_df['call_stack'][i]:
+                total_runtime += original_df['exclusive_runtimes'][i]
+
+    #now get individual ratio based on call_stack parameter
+    call_stack_runtime=0
+    for i in range(len(original_df['call_stack'])):
+        if call_stack == original_df['call_stack'][i]:
+            call_stack_runtime += original_df['exclusive_runtimes'][i]
+    return call_stack_runtime/total_runtime
+
 def get_nodes_rmve_empty(input_dict, color_list, file_name_limit):
 
     print("Building Nodes...\n")
@@ -150,7 +166,7 @@ def get_nodes_rmve_empty(input_dict, color_list, file_name_limit):
 
     # will retain order with corresponding call_stack
     #color_list = ["#232023", "#A7A6BA", "#808080", "#C5C6D0", "#D3D3D3"]
-    color_list = ["#00B571", "#FF9633", "#F633FF", "#335BFF", "#33FFB2"]
+    color_list = ["#00B571", "#5D7B70", "#F633FF", "#335BFF", "#33FFB2"]
     index=0
     for i in os.listdir("filtered_inp_files/only_rem_duplicates/"):
         original_df = pd.read_csv(
@@ -177,7 +193,8 @@ def get_nodes_rmve_empty(input_dict, color_list, file_name_limit):
                         "id" : str(call_stack)+"_"+i[0:file_name_limit],
                         "label" : str(call_stack)+"_"+i[0:file_name_limit],
                         "color" : color_list[index],
-                        "len" : n_calls_dict[call_stack]
+                        #"len" : n_calls_dict[call_stack]
+                        "len": create_node_length(original_df, call_stack)
 
                     })
         else:
@@ -188,8 +205,9 @@ def get_nodes_rmve_empty(input_dict, color_list, file_name_limit):
                         "id": str(call_stack) + "_" + i[0:file_name_limit],
                         "label": str(call_stack) + "_" + i[0:file_name_limit],
                         "color": color_list[index],
-                        "len": n_calls_dict[call_stack],
-                        "opacity":0.3
+                        #"len": n_calls_dict[call_stack],
+                        "len": create_node_length(original_df, call_stack)
+                        #"opacity":0.3
 
                     })
         index+=1
@@ -209,9 +227,10 @@ def get_nodes_rmve_none(input_dict, color_list, file_name_limit):
     # will retain order with corresponding call_stack
 
     #color_list = ["#232023", "#A7A6BA", "#808080", "#C5C6D0", "#D3D3D3"]
-    color_list = ["#00B571", "#FF9633", "#F633FF", "#335BFF", "#33FFB2"]
+    color_list = ["#00B571", "#5D7B70", "#F633FF", "#335BFF", "#33FFB2"]
     index=0
     for i in os.listdir("filtered_inp_files/only_rem_duplicates/"):
+        node_length_list=[]
         original_df = pd.read_csv(
             "filtered_inp_files/only_rem_duplicates/" + str(os.listdir("filtered_inp_files/only_rem_duplicates/")[index]))
         combined_func_df = pd.read_csv("filtered_inp_files/func_data/combined_func_data.csv")
@@ -236,17 +255,31 @@ def get_nodes_rmve_none(input_dict, color_list, file_name_limit):
                         "id" : str(call_stack)+"_"+i[0:file_name_limit],
                         "label" : str(call_stack)+"_"+i[0:file_name_limit],
                         "color" : color_list[index],
-                        "len" : n_calls_dict[call_stack]
+                        #"len" : n_calls_dict[call_stack]
+                        "len": create_node_length(original_df, call_stack),
+                        "empty1":False,
+                        "empty2":False
 
                     })
+                    node_length_list.append(create_node_length(original_df, call_stack))
                 else:
                     input_dict['Nodes'].append({
                         "id": str(call_stack) + "_" + i[0:file_name_limit],
                         "label": str(call_stack) + "_" + i[0:file_name_limit],
-                        "color": "#FF0000",
+                        "color": color_list[index],
                         "len": 20,
-                        "opacity": 0.3
+                        "empty1": True,
+                        "empty2": False
                     })
+
+            for i in range(len(input_dict["Nodes"])):
+                if input_dict["Nodes"][i]["empty1"]==True:
+                    input_dict["Nodes"][i]["len"]=average(node_length_list)
+
+
+
+
+
         else:
 
             for call_stack in reverse(combined_func_df['call_stack'].tolist()):
@@ -255,30 +288,53 @@ def get_nodes_rmve_none(input_dict, color_list, file_name_limit):
                         "id": str(call_stack) + "_" + i[0:file_name_limit],
                         "label": str(call_stack) + "_" + i[0:file_name_limit],
                         "color": color_list[index],
-                        "len": n_calls_dict[call_stack],
-                        "opacity":0.3
+                        "len": create_node_length(original_df, call_stack),
+                        "empty2":False,
+                        "empty1":False
+                        #"len": n_calls_dict[call_stack],
+                        #"opacity":0.3
 
                     })
+                    node_length_list.append(create_node_length(original_df, call_stack))
                 else:
                     input_dict['Nodes'].append({
                         "id": str(call_stack) + "_" + i[0:file_name_limit],
                         "label": str(call_stack) + "_" + i[0:file_name_limit],
                         "color": "#FF0000",
                         "len": 20,
-                        "opacity": 0.3
+                        "empty2": True, #used to identify these empty nodes
+                        "empty1": False
                     })
+            for i in range(len(input_dict["Nodes"])):
+                if input_dict["Nodes"][i]["empty2"]==True:
+                    input_dict["Nodes"][i]["len"]=average(node_length_list)
         index+=1
     return input_dict
 
+def average(lst):
+    return sum(lst) / len(lst)
 
 def calc_limit(x):
     # through manual testing, this function was found to provide an effective relation between the chord spacing factor and the top number of functions (user specified)
     return math.ceil(1082.06 * (pow(math.e, 0.000435115 * x)) - 1076.51)
 
+"""def get_chord_width(call_stack, original_df, source_id, target_id, comparing_to_df):
+    num_occurences_in_original=0
+    num_occurences_in_comparing_to=0
+    for i in original_df["call_stack"]:
+        if call_stack==i:
+            num_occurences_in_original+=1
+    for i in comparing_to_df["call_stack"]:
+        if call_stack==i:
+            num_occurences_in_comparing_to+=1
+
+    if num_occurences_in_original < num_occurences_in_comparing_to:
+        """
 
 
 def get_chords(input_dict, file_name_dict):
     for json_dump_index in range(len(os.listdir("filtered_inp_files/only_rem_duplicates/"))):
+        target_start_dict={}
         # go through chord data folder that is categorized by JSON Dump
 
         print("Going through " + str(os.listdir("filtered_inp_files/only_rem_duplicates/")[json_dump_index]))
@@ -301,6 +357,7 @@ def get_chords(input_dict, file_name_dict):
 
 
         for i in range(len(original_df)):
+
             source_start = 0
             #value_list_2=[0.5, 1]
 
@@ -310,6 +367,7 @@ def get_chords(input_dict, file_name_dict):
 
 
             for j in range(len(json_dumps_to_compare_with)):
+                previous_target_start = 0
 
 
 
@@ -331,10 +389,12 @@ def get_chords(input_dict, file_name_dict):
                 # print("Comparing with Dump " + str(json_dumps_to_compare_with[j][0:file_name_limit]))
 
                 for k in range(len(comparing_to_df)):
+
                     # go through comparing_to_df to compare with df_by_severity
 
                     if (original_df['call_stack'].tolist()[i] ==
                             comparing_to_df['call_stack'].tolist()[k]):
+
                         num_chords_from_specific_node+=1
 
                         # check if there is a connection: one function in our source dataframe/JSON dump is found in another dump
@@ -348,7 +408,7 @@ def get_chords(input_dict, file_name_dict):
 
                         source_id = original_df['call_stack'].tolist()[i]+"_"+file_name_dict["filtered_inp_files/only_rem_duplicates/"+str(os.listdir("filtered_inp_files/only_rem_duplicates/")[json_dump_index])]
                         target_id = comparing_to_df['call_stack'].tolist()[k]+"_"+file_name_dict["filtered_inp_files/only_rem_duplicates/"+json_dumps_to_compare_with[j]]
-
+                        #target_start_dict[target_id]=previous_target_start
                         #source_increment = (get_length_of_node(source_id, input_dict)*5000000)/(total_possible_connections*original_df['exclusive_runtimes'].tolist()[i])
                         #source_increment = (get_length_of_node(source_id, input_dict)) / (
                         #            total_possible_connections * original_df['scaled_runtimes'].tolist()[i])
@@ -373,6 +433,7 @@ def get_chords(input_dict, file_name_dict):
                         source_increment *= scale_factor
                         target_increment *= scale_factor"""
                         target_start=get_length_of_node(target_id, input_dict)-target_increment
+                        #target_start=target_start_dict[target_id]
 
                         #print("Call stack: " + source_id + " going to " +target_id)
                         #print(num_chords_from_specific_node)
@@ -390,7 +451,7 @@ def get_chords(input_dict, file_name_dict):
                                 "start": target_start,
                                 "end": target_start+target_increment
                             },
-                            #"value": 0.5 ,
+                            "value": 0.5 ,
                             #value_list[num_chords_from_specific_node-1], #bug is that it counts when things that have 2 connections are at 1 connection
                             "call_stack":source_id,
                             "source_severity": original_df['sev_bin_upper_bound'][i],
@@ -401,7 +462,8 @@ def get_chords(input_dict, file_name_dict):
                         source_start+=(get_length_of_node(source_id, input_dict) / (total_possible_connections))-(0.75*get_length_of_node(source_id, input_dict) / (total_possible_connections))
 
                         target_start-=target_increment
-                        target_start+=(get_length_of_node(target_id, input_dict) / (total_possible_connections))-(0.75*get_length_of_node(target_id, input_dict) / (total_possible_connections))
+                        target_start-=(get_length_of_node(target_id, input_dict) / (total_possible_connections))-(0.75*get_length_of_node(target_id, input_dict) / (total_possible_connections))
+                        #previous_target_start=target_start
     return input_dict
 
 def reevaluate_nodes(input_dict):
@@ -447,6 +509,8 @@ def reevaluate_chords(input_dict):
         for dict in input_dict["Chords"]:
             if dict["source"]["id"] == id:
                 dict["value"] = value_list[counter_for_func-1]
+
+
 
     return input_dict
 
@@ -520,6 +584,55 @@ def filter_nodes(original_dict, num_connections):
 
         #add a chord with color white to make the other chords have color (otherwise it will have all black)
     return original_dict
+
+def filter_chords(input_dict):
+    #this function goes through the dict and removes redundant chords
+    """
+    1.0 = 1 connection
+    0.3 = 2 connections
+    0.1 = 3 connections
+    """
+    value_list = [1.0, 0.3, 0.1]
+
+    # remove empty chords: #empty chords are identified with having the value 0.5 and are still in the list
+    """index = 0
+    for chord in input_dict["Chords"]:
+        if float(chord["source"]["end"]) - float(chord["source"]["start"]) == 0:
+            print(chord)
+            del input_dict["Chords"][index]
+            index -= 1
+        index += 1"""
+
+    for i in range(len(input_dict["Chords"])):
+        counter=0
+        index = 0
+        if input_dict["Chords"][i]["source"]["end"]==0.000000005:
+            break
+        #print(chord)
+        if input_dict["Chords"][i]["value"] in value_list:
+            num_connections = value_list.index(input_dict["Chords"][i]["value"])+1 #if chord["value"] is 1.0, this should return 1 connection
+            print(num_connections)
+            #if there is 1 connection, then there will be 1 redundant chord that needs to be deleted
+            current_source_id = input_dict["Chords"][i]["source"]["id"]
+            current_target_id = input_dict["Chords"][i]["target"]["id"]
+            for j in range(i, len(input_dict["Chords"])):
+
+                """if counter == num_connections:
+                    break"""
+                if input_dict["Chords"][j]["source"]["id"] == current_target_id and input_dict["Chords"][j]["target"]["id"]==current_source_id:
+                    #print(chord["source"]["id"] + "matching with " + current_target_id)
+
+                    input_dict["Chords"][i]["source"]["end"]=float(input_dict["Chords"][i]["source"]["start"])+0.00000006
+                    input_dict["Chords"][i]["target"]["end"] = float(input_dict["Chords"][i]["target"]["start"]) + 0.00000006
+                    #index-=1
+                    counter+=1
+                index+=1
+
+
+
+    return input_dict
+
+
 
 
 
@@ -612,6 +725,8 @@ if __name__ == '__main__':
 
         input_dict = get_chords(input_dict, file_name_dict)
         input_dict = reevaluate_chords(input_dict)
+        input_dict = filter_chords(input_dict)
+
         #print(input_dict)
 
 
@@ -669,6 +784,8 @@ if __name__ == '__main__':
             input_dict = pickle.load(f)
         with open('cache/input_d2.pkl', 'rb') as f:
             input_dict_2 = pickle.load(f)
+
+        input_dict = filter_chords(input_dict)
         text_info = get_text(input_dict)
         text_info_2 = get_text(input_dict_2)
     """for node in input_dict["Nodes"]:

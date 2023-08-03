@@ -884,7 +884,8 @@ def main():
     """input_file_list = [
         "inp_for_circos/Grid-Xconj_evol_16c-model_reuse-chimbuko_306104-provdb.json",
         "inp_for_circos/Grid-Xconj_evol_16c-model_reuse-chimbuko_306124-provdb.json",
-        "inp_for_circos/Grid-Xconj_evol_16c-model_reuse-chimbuko_306253-provdb.json",
+
+    "inp_for_circos/Grid-Xconj_evol_16c-model_reuse-chimbuko_306253-provdb.json",
         "inp_for_circos/Grid-Xconj_evol_16c-model_reuse-chimbuko_309126-provdb.json"
     ]"""
     """input_file_list = [
