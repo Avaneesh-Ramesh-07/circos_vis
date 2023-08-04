@@ -213,7 +213,26 @@ def get_nodes_rmve_empty(input_dict, color_list, file_name_limit):
         index+=1
     return input_dict
 
-def get_nodes_rmve_none(input_dict, color_list, file_name_limit):
+def remove_empty_nodes(original_dict):
+    nodes_to_delete = []
+    for node in original_dict["Nodes"]:
+        if check_num_connections(node["id"], original_dict)[0] ==0:
+            # print(str(node["id"]) + " has " + str(check_num_connections(node["id"], original_dict)) + " connections")
+            nodes_to_delete.append(node["id"])
+
+    index = 0
+    print(nodes_to_delete)
+    for i in range(len(original_dict["Nodes"])):
+        if original_dict["Nodes"][index]['id'] in nodes_to_delete:
+            # print(all_node_id)
+            # print(input_dict["Nodes"][index]['id'])
+
+            # nodes_to_delete.remove(input_dict["Nodes"][index]['id'])
+            del original_dict["Nodes"][index]
+            index -= 1
+        index += 1
+
+def get_nodes(input_dict, color_list, file_name_limit):
 
     print("Building Nodes...\n")
     """
@@ -234,14 +253,14 @@ def get_nodes_rmve_none(input_dict, color_list, file_name_limit):
         original_df = pd.read_csv(
             "filtered_inp_files/only_rem_duplicates/" + str(os.listdir("filtered_inp_files/only_rem_duplicates/")[index]))
         combined_func_df = pd.read_csv("filtered_inp_files/func_data/combined_func_data.csv")
-        n_calls_dict = {}
+        """n_calls_dict = {}
 
         for call_stack in combined_func_df['call_stack']:
             total_calls = 0
             for j in range(len(original_df['call_stack'])):
                 if call_stack == original_df['call_stack'][j]:
                     total_calls += original_df['num_calls'][j]
-            n_calls_dict[call_stack] = total_calls
+            n_calls_dict[call_stack] = total_calls"""
 
 
         #print(n_calls_normalized) #may not be the best way to normalize
@@ -250,64 +269,32 @@ def get_nodes_rmve_none(input_dict, color_list, file_name_limit):
 
         if index%2==0:
             for call_stack in combined_func_df['call_stack']:
-                if n_calls_dict[call_stack]!=0:
+                if create_node_length(original_df, call_stack)!=0:
                     input_dict['Nodes'].append({
                         "id" : str(call_stack)+"_"+i[0:file_name_limit],
                         "label" : str(call_stack)+"_"+i[0:file_name_limit],
                         "color" : color_list[index],
                         #"len" : n_calls_dict[call_stack]
-                        "len": create_node_length(original_df, call_stack),
-                        "empty1":False,
-                        "empty2":False
+                        "len": create_node_length(original_df, call_stack)
 
                     })
                     node_length_list.append(create_node_length(original_df, call_stack))
-                else:
-                    input_dict['Nodes'].append({
-                        "id": str(call_stack) + "_" + i[0:file_name_limit],
-                        "label": str(call_stack) + "_" + i[0:file_name_limit],
-                        "color": color_list[index],
-                        "len": 20,
-                        "empty1": True,
-                        "empty2": False
-                    })
-
-            for i in range(len(input_dict["Nodes"])):
-                if input_dict["Nodes"][i]["empty1"]==True:
-                    input_dict["Nodes"][i]["len"]=average(node_length_list)
-
-
-
-
 
         else:
 
             for call_stack in reverse(combined_func_df['call_stack'].tolist()):
-                if n_calls_dict[call_stack] != 0:
+                if create_node_length(original_df, call_stack) != 0:
                     input_dict['Nodes'].append({
                         "id": str(call_stack) + "_" + i[0:file_name_limit],
                         "label": str(call_stack) + "_" + i[0:file_name_limit],
                         "color": color_list[index],
-                        "len": create_node_length(original_df, call_stack),
-                        "empty2":False,
-                        "empty1":False
+                        "len": create_node_length(original_df, call_stack)
                         #"len": n_calls_dict[call_stack],
                         #"opacity":0.3
 
                     })
                     node_length_list.append(create_node_length(original_df, call_stack))
-                else:
-                    input_dict['Nodes'].append({
-                        "id": str(call_stack) + "_" + i[0:file_name_limit],
-                        "label": str(call_stack) + "_" + i[0:file_name_limit],
-                        "color": "#FF0000",
-                        "len": 20,
-                        "empty2": True, #used to identify these empty nodes
-                        "empty1": False
-                    })
-            for i in range(len(input_dict["Nodes"])):
-                if input_dict["Nodes"][i]["empty2"]==True:
-                    input_dict["Nodes"][i]["len"]=average(node_length_list)
+
         index+=1
     return input_dict
 
@@ -515,11 +502,20 @@ def reevaluate_chords(input_dict):
     return input_dict
 
 def check_num_connections(node_id, input_dict):
+
     num_connections=0
+    resulting_id = []
     for chord in input_dict["Chords"]:
-        if chord["source"]["id"]==node_id:
+        if chord["source"]["id"]==node_id and chord["source"]["end"]-chord["source"]["start"]!=0.000000005:
+            print(chord["source"]["end"]-chord["source"]["start"])
             num_connections+=1
-    return num_connections
+            resulting_id.append(chord["target"]["id"])
+
+    """if num_connections ==0:
+        for chord in input_dict["Chords"]:
+            if chord["target"]["id"] == node_id:
+                num_connections += 1"""
+    return num_connections#, resulting_id
 
 
 
@@ -528,13 +524,20 @@ def filter_nodes(original_dict, num_connections):
     value_list = [1.0, 0.3, 0.1] #will need to be extended if more than 4 dumps are being compared
     #filters nodes by number of connections
     nodes_to_delete=[]
-    for node in original_dict["Nodes"]:
-        if num_connections != check_num_connections(node["id"], original_dict):
+    resulting_id=[]
+    """for node in original_dict["Nodes"]:
+        for result in check_num_connections(node["id"], original_dict)[1]:
+            resulting_id.append(result) #program shouldn't remove any of the nodes in this list
+        if num_connections != check_num_connections(node["id"], original_dict)[0] and node["id"] not in :
             #print(str(node["id"]) + " has " + str(check_num_connections(node["id"], original_dict)) + " connections")
+            nodes_to_delete.append(node["id"])"""
+    for node in original_dict["Nodes"]:
+        print(str(node["id"]) + " has " + str(check_num_connections(node["id"], original_dict)) + " connections")
+        if num_connections != check_num_connections(node["id"], original_dict):
+            print("     IF" + str(node["id"]) + " has " + str(check_num_connections(node["id"], original_dict)) + " connections")
             nodes_to_delete.append(node["id"])
-
     index = 0
-
+    print(nodes_to_delete)
     for i in range(len(original_dict["Nodes"])):
         if original_dict["Nodes"][index]['id'] in nodes_to_delete:
             # print(all_node_id)
@@ -570,7 +573,7 @@ def filter_nodes(original_dict, num_connections):
 
                         "id": original_dict["Nodes"][0]['id'],
                         "start": 0,
-                        "end": 0.00000005
+                        "end": 0.000000005
                     },
                     "target": {
                         "id": original_dict["Nodes"][1]['id'],
@@ -622,8 +625,8 @@ def filter_chords(input_dict):
                 if input_dict["Chords"][j]["source"]["id"] == current_target_id and input_dict["Chords"][j]["target"]["id"]==current_source_id:
                     #print(chord["source"]["id"] + "matching with " + current_target_id)
 
-                    input_dict["Chords"][i]["source"]["end"]=float(input_dict["Chords"][i]["source"]["start"])+0.00000006
-                    input_dict["Chords"][i]["target"]["end"] = float(input_dict["Chords"][i]["target"]["start"]) + 0.00000006
+                    input_dict["Chords"][i]["source"]["end"]=float(input_dict["Chords"][i]["source"]["start"])+0.000000006
+                    input_dict["Chords"][i]["target"]["end"] = float(input_dict["Chords"][i]["target"]["start"]) + 0.000000006 #this is a different number, so you can distinguish which chord was shortened to remove duplicates versus chords that were added to change color
                     #index-=1
                     counter+=1
                 index+=1
@@ -714,7 +717,9 @@ if __name__ == '__main__':
         color_list = ["#FF7417", "#FB607F", "777B7E", "#708238"] #no Red, Blue, or Yellow to conflict with chords
 
         file_name_limit = 2
-        input_dict = get_nodes_rmve_empty(input_dict, color_list, file_name_limit)
+        input_dict = get_nodes(input_dict, color_list, file_name_limit)
+        print(input_dict["Nodes"])
+       # input_dict = remove_empty_nodes(input_dict)
         #print(input_dict)
         text_info = get_text(input_dict)
 
@@ -724,17 +729,17 @@ if __name__ == '__main__':
         #print(file_name_dict)
 
         input_dict = get_chords(input_dict, file_name_dict)
-        input_dict = reevaluate_chords(input_dict)
-        input_dict = filter_chords(input_dict)
+        input_dict = reevaluate_chords(input_dict) #changes colors for chords
+        input_dict = filter_chords(input_dict) #filters chords by removing duplicates
 
         #print(input_dict)
 
 
-        input_dict_2={"Nodes": [], "Chords": []}
-        input_dict_2=get_nodes_rmve_none(input_dict_2, color_list, file_name_limit)
+        """input_dict_2={"Nodes": [], "Chords": []}
+        input_dict_2=get_nodes(input_dict_2, color_list, file_name_limit)
 
         for chord in input_dict["Chords"]:
-            input_dict_2["Chords"].append(chord)
+            input_dict_2["Chords"].append(chord)"""
 
         for i in range(11):
             # the color pallete value parameter won't work unless you have variance, so this piece of code adds a tiny, tiny chord of every color which tricks the color pallete
@@ -743,7 +748,7 @@ if __name__ == '__main__':
 
                     "id": input_dict["Nodes"][0]['id'],
                     "start": 0,
-                    "end": 0.00000005
+                    "end": 0.000000005
                 },
                 "target": {
                     "id": input_dict["Nodes"][1]['id'],
@@ -754,9 +759,9 @@ if __name__ == '__main__':
                 "value": float(i / 10)
             })
         #input_dict_2 = get_chords(input_dict_2, file_name_dict, value_list)
-        input_dict_2 = reevaluate_chords(input_dict_2)
+        #input_dict_2 = reevaluate_chords(input_dict_2)
 
-        for i in range(11):
+        """for i in range(11):
             # the color pallete value parameter won't work unless you have variance, so this piece of code adds a tiny, tiny chord of every color which tricks the color pallete
             input_dict_2["Chords"].append({
                 "source": {
@@ -774,20 +779,20 @@ if __name__ == '__main__':
                 "value": float(i / 10)
             })
         #print(input_dict_2)
-        text_info_2 = get_text(input_dict_2)
+        text_info_2 = get_text(input_dict_2)"""
         with open('cache/input_d1.pkl', 'wb') as f:
             pickle.dump(input_dict, f)
-        with open('cache/input_d2.pkl', 'wb') as f:
-            pickle.dump(input_dict_2, f)
+        """with open('cache/input_d2.pkl', 'wb') as f:
+            pickle.dump(input_dict_2, f)"""
     else:
         with open('cache/input_d1.pkl', 'rb') as f:
             input_dict = pickle.load(f)
-        with open('cache/input_d2.pkl', 'rb') as f:
-            input_dict_2 = pickle.load(f)
+        """with open('cache/input_d2.pkl', 'rb') as f:
+            input_dict_2 = pickle.load(f)"""
 
-        input_dict = filter_chords(input_dict)
+        #input_dict = filter_chords(input_dict)
         text_info = get_text(input_dict)
-        text_info_2 = get_text(input_dict_2)
+        #text_info_2 = get_text(input_dict_2)
     """for node in input_dict["Nodes"]:
         input_dict_2["Nodes"].append(node)
     for chord in input_dict["Chords"]:
@@ -835,7 +840,7 @@ if __name__ == '__main__':
     children_for_graph.append(html.Div(["Event data for Graph 1:",
             html.Div(id="default-circos-output_no_chord_data")]))
 
-    graph = dashbio.Circos(
+    """graph = dashbio.Circos(
                     id="hpc_circos_with_chord_data",
                     selectEvent={"0": "hover"},
                     layout=input_dict_2["Nodes"],
@@ -857,7 +862,7 @@ if __name__ == '__main__':
             ))
 
     children_for_graph.append(html.Div(["Event data for Graph 2:",
-            html.Div(id="default-circos-output_with_chord_data")]))
+            html.Div(id="default-circos-output_with_chord_data")]))"""
     #finished adding 2 main graphs
     #now need to add other individual graphs
 
@@ -994,7 +999,7 @@ if __name__ == '__main__':
         return "There are no event data. Hover over a data point to get more information."
 
 
-    @callback(
+    """@callback(
         Output(component_id='default-circos-output_no_chord_data', component_property='children'),
         Input("hpc_circos_no_chord_data", "eventDatum"),
     )
@@ -1006,7 +1011,7 @@ if __name__ == '__main__':
                              value["source"]["id"] + " (of severity:  " + str(value["source_severity"]) + ") to " + value["target"]["id"] + "(of severity: " + \
                              str(value["target_severity"]) + "). Also this chord has value parameter: " + str(value["value"])
             return [html.Div(output_string)]
-        return "There are no event data. Hover over a data point to get more information."
+        return "There are no event data. Hover over a data point to get more information."""
 
 
     @callback(
