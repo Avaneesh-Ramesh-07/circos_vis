@@ -4,34 +4,27 @@ Circos is a visualization that maps relationships between data organized in a ci
 #Running
 This framework is designed to take in multiple dumps of JSON data and graph the relations between them. To produce visualization, one must first run the setup.py file, which configures and adds all the necessary files to generate the visualization
 
-This script takes two parameters: input_folder and add_identifier.
-
-The required parameter, input_folder, is the folder that contains the JSON files that are parsed and used to produce visualization.
-
-The optional parameter, add_identifier, is a number (0 or 1) that  is used to determine whether an index identifier should be placed at the end of each file name. This is particularly useful when visualizing the same file against itself. 
-
 To run the setup script, simply run the command:
 
 ```mermaid
-python setup.py input_folder add_identifier
+python setup.py 
 ```
 
-and provide the necessary parameters.
 
 
 
 The second step is to run the vis.py file which produces the visualization using the files produced from the setup.py.
 
-This script takes in 2 optional parameters: top_num_func and file_delim.
+This script takes in 2 parameters: force_compute (-f) and file_name_limit.
 
-The parameter, top_num_func, is a number that represents the top number of functions to display from each severity bin. Default value for this parameter is 5.
+The parameter, force_compute, is an optional flag (-f) that tells the program whether to force compute the information for visualization or whether to use cached data. If this is not included, the program will use cached data.
 
-The parameter, file_delim, is a number that represents a file delimeter to accurately interpret files (will recognize '30' in filename 30_func_and_runtime.csv). Default value for this parameter is 2.
+The parameter, file_name_limit, is a number that represents a file delimeter to accurately interpret files (will recognize '30' in filename 30_func_and_runtime.csv). Default value for this parameter is 2.
 
 To run the vis script, simply run the command:
 
 ```mermaid
-python vis.py top_num_func file_delim
+python vis.py force_compute file_name_limit
 ```
 
 and provide the necessary parameters.

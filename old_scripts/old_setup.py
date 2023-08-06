@@ -123,11 +123,11 @@ class DataFrame:
             for idx, val in enumerate(self.norm_severity_list)
             if val >= norm_severity
         ]
-        #print(len(res))
+        print(len(res))
         unique_func_names = [self.func_names_list[i] for i in res]
-        #print(set(unique_func_names))
+        print(set(unique_func_names))
         unique_callpath_hash = [self.hashed_call_stack_list[i] for i in res]
-        #print(set(unique_callpath_hash))
+        print(set(unique_callpath_hash))
 
     def return_unique_entries_for_specific_norm_severity(
         self, exclusive_lower_bound, inclusive_upper_bound
@@ -139,11 +139,11 @@ class DataFrame:
             for idx, val in enumerate(self.norm_severity_list)
             if (val > exclusive_lower_bound) and (val <= inclusive_upper_bound)
         ]
-        #print(len(res))
+        print(len(res))
         unique_func_names = [self.func_names_list[i] for i in res]
-        #print(set(unique_func_names))
+        print(set(unique_func_names))
         unique_callpath_hash = [self.hashed_call_stack_list[i] for i in res]
-        #print(set(unique_callpath_hash))
+        print(set(unique_callpath_hash))
 
         for hashindex in res:
             newobj = DataFrame()
@@ -498,33 +498,58 @@ def get_algo_params(d):
     for key, val in d.items():
         if isinstance(val, dict):
             for k, v in val.items():
-                #print("--", k, v)
+                print("--", k, v)
                 out_dict[k] = v
         else:
-            #print(key, val)
+            print(key, val)
             out_dict[key] = val
     return out_dict
 
 
 def get_call_stack_dict(l):
     out_dict = {v["entry"]: v for v in l}
+    # #     print(out_dict)
+    # #     call_stack = [ zip(get_short_func_name(v['func']), str(v['is_anomaly'])) for v in l]
+    # #     print(call_stack)
+    # #     call_stack_list = list(call_stack)
+    # #     print(call_stack_list)
+    # #     return call_stack
+    #     call_stack = [ (get_short_func_name(v['func'])) for v in l]
     root = 0
     prev_func = ""
     call_stack = []
     for key, val in out_dict.items():
+        # print ('*****', get_short_func_name(val['func']))
+        # print ('*****', val['func'])
         if root == 0:  # if root of the callgraph
             prev_func = val["func"]
         else:
             call_stack.append((val["func"], prev_func))
             prev_func = val["func"]
         root += 1
+    #    call_stack = [ (v['func']+"->"+str(v['is_anomaly'])) for v in l]
+    #     print(call_stack)
+    #     call_stack_list = list(call_stack)
+    #     print(call_stack_list)
     return call_stack
 
 
 def get_call_stack_dict_old(l):
+    #     d = [ l[i] for i in np.arange(len(l))]
+    #     print (d[0])
     out_dict = {v["entry"]: v for v in l}
+    #     print(out_dict)
+    #     call_stack = [ zip(get_short_func_name(v['func']), str(v['is_anomaly'])) for v in l]
+    #     print(call_stack)
+    #     call_stack_list = list(call_stack)
+    #     print(call_stack_list)
+    #     return call_stack
+    #     call_stack = [ (get_short_func_name(v['func']+"->"+str(v['is_anomaly']))) for v in l]
 
     call_stack = [(v["func"] + "->" + str(v["is_anomaly"])) for v in l]
+    #     print(call_stack)
+    #     call_stack_list = list(call_stack)
+    #     print(call_stack_list)
     return call_stack
 
 
@@ -629,6 +654,8 @@ def read_json_file(filename):
                     dict_entries[entry_idx][key] = traverse(dd[key])
                 if key == "func":
                     func_name = dict_entries[entry_idx][key]
+            ## print a call_stack_dict for this function
+            # print(func_name, dict_entries[entry_idx]['call_stack'])
     return dict_entries
 
 
@@ -671,10 +698,6 @@ def basic_info_to_df(obj, output_file):
     for normalized_sev in obj.norm_severity_list:
         data_dict['severity'].append(normalized_sev)
 
-    for entry_time in obj.entry_time_list:
-        data_dict['entry_time'].append(entry_time)
-        print(entry_time)
-
 
 
     df = pd.DataFrame(data_dict)
@@ -694,64 +717,33 @@ def basic_info_to_df(obj, output_file):
     df = apply_upper_bound(df, 'severity_trunc', severity_bins)
     # Useful values(yes, it breaks without the 0.0)
     df.to_csv(output_file)
-def extended_info_to_csv(file_name_limit):
+def extended_info_to_csv(add_identifier):
     possible_bins = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
-    #if n=10
-    #if s = exclusive_runtimes
+    index=0
     for file_name in os.listdir("unfiltered_inp_files/"):
         df = pd.read_csv("unfiltered_inp_files/" + file_name)
-        #df.drop_duplicates(subset='call_stack', inplace=True)
-        df.sort_values(by = "exclusive_runtimes", ascending = False, inplace=True)
-        df.drop_duplicates(subset=['call_stack', 'num_calls'], inplace=True)
-        df.reset_index(inplace=True)
-        index=0
-        for i in range(len(df["exclusive_runtimes"].tolist())):
-            if df["exclusive_runtimes"].tolist()[index]==0:
-                df.drop(labels=i, inplace=True)
-                index-=1
-            index+=1
-        df.to_csv("filtered_inp_files/only_rem_duplicates/" + file_name[0:file_name_limit] + ".csv")
-        df=df.head(10)
+        sev_bins_column = []
+        for i in possible_bins:
+            sev_bins_column.append(i)
+        for i in range(len(df) - len(possible_bins)):
+            sev_bins_column.append(' ')
+        agg_runtime_column = []
+        for bin in possible_bins:
+            aggregated_runtime = 0
+            for i in range(len(df["sev_bin_upper_bound"])):
+                if (df["sev_bin_upper_bound"][i] == bin):
+                    aggregated_runtime += df["exclusive_runtimes"][i]
+            agg_runtime_column.append(aggregated_runtime)
+        for i in range(len(df) - len(possible_bins)):
+            agg_runtime_column.append(" ")
+        df["all_sev_bins"] = sev_bins_column
+        df["agg_runtimes"] = agg_runtime_column
+        if add_identifier==True:
 
-        #print(df)
-        df.reset_index(inplace=True)
-        df.to_csv("filtered_inp_files/unshortened/" + file_name[0:file_name_limit] + ".csv")
-    df = pd.concat(map(pd.read_csv, ["filtered_inp_files/unshortened/"+ i for i in os.listdir("filtered_inp_files/unshortened/")]), ignore_index=True)
-    df=df.drop(['Unnamed: 0', 'index', 'all_func_names', 'severity_trunc', 'TotalRuntimeSum(AllFunc)', 'num_calls', 'severity', 'sev_bin_upper_bound'], axis='columns')
-    df.drop_duplicates(subset='call_stack', inplace=True)
-    df.sort_values(by="exclusive_runtimes", ascending=False, inplace=True)
-
-    #can be removed, but it's just to lessen the load:
-
-    df = df.head(10)
-
-    df.to_csv("filtered_inp_files/func_data/combined_func_data.csv")
-    print(df)
-
-
-
-    """sev_bins_column = []
-    for i in possible_bins:
-        sev_bins_column.append(i)
-    for i in range(len(df) - len(possible_bins)):
-        sev_bins_column.append(' ')
-    agg_runtime_column = []
-    for bin in possible_bins:
-        aggregated_runtime = 0
-        for i in range(len(df["sev_bin_upper_bound"])):
-            if (df["sev_bin_upper_bound"][i] == bin):
-                aggregated_runtime += df["exclusive_runtimes"][i]
-        agg_runtime_column.append(aggregated_runtime)
-    for i in range(len(df) - len(possible_bins)):
-        agg_runtime_column.append(" ")
-    df["all_sev_bins"] = sev_bins_column
-    df["agg_runtimes"] = agg_runtime_column
-    if add_identifier==True:
-
-        df.to_csv("filtered_inp_files/unshortened/" + file_name[0:2] + " "+ str(index)+".csv")
-    else:
-        df.to_csv("filtered_inp_files/unshortened/" + file_name[0:2] + ".csv")
-    index+=1"""
+            df.to_csv("filtered_inp_files/unshortened/" + file_name[0:2] + " "+ str(index)+".csv")
+        else:
+            df.to_csv("filtered_inp_files/unshortened/" + file_name[0:2] + ".csv")
+        index+=1
 
 def containsLetterAndNumber(input):
     return input.isalnum() and not input.isalpha() and not input.isdigit()
@@ -761,6 +753,10 @@ def data_scaler_median(data):
     median=statistics.median(data)
     minimum = min(data)
     maximum = max(data)
+
+    print("Median: "+str(median))
+    print("Min: " + str(minimum))
+    print("Max: " + str(maximum))
 
     for data_point in data:
         if data_point<=median:
@@ -780,6 +776,10 @@ def data_scaler_mean(data):
     mean=statistics.mean(data)
     minimum = min(data)
     maximum = max(data)
+
+    print("Mean: "+str(mean))
+    print("Min: " + str(minimum))
+    print("Max: " + str(maximum))
 
     for data_point in data:
         if data_point<=mean:
@@ -804,19 +804,35 @@ def get_chord_info():
     possible_bins = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
     for file_name in os.listdir("filtered_inp_files/unshortened/"):
         print("Reading file: " + str(file_name))
+        df = pd.DataFrame()
         df = pd.read_csv("filtered_inp_files/unshortened/" + file_name)
 
         new_df = pd.DataFrame()
         unique_call_stacks = []
         severity = []
         total_runtimes = []
+
+        # [unique_call_stacks.append(x) for x in df['call_stack'] if x not in unique_call_stacks]
+        """for i in range(len(df['call_stack'])):
+            if (df['call_stack'][i] not in unique_call_stacks.keys()) and (df['severity'][i] not in unique_call_stacks.values()):
+                unique_call_stacks[df['call_stack'][i]].append(df['severity'][i])
+        #unique_call_stacks=list(unique_call_stacks.keys())
+        print(list(unique_call_stacks.keys()))"""
         # unique_call_stacks=
         df = df.drop_duplicates(subset=['call_stack', 'sev_bin_upper_bound'])
         df.reset_index(inplace=True)
+        """for i in range(len(df)):
+            #print(df)
+            #print(type(df['call_stack'][i]))
+            if (df['call_stack'][i].isdigit()==True) or ("#" in df['call_stack'][i]) or ("e+" in df['call_stack'][i].lower()):
+
+                df = df.drop(i)"""
 
         unique_call_stacks = df['call_stack']
 
         unique_call_stacks = unique_call_stacks.tolist()
+        # print(len(unique_call_stacks))
+        # print(len(df['call_stack']))
 
         df.reset_index(inplace=True)
         index = 0
@@ -867,7 +883,53 @@ def main():
 
     """
 
+    """try:
+        print("USING SPECIFIED PARAMETERS\n")
+        argv=sys.argv[1:]
+        if argv[0]==0:
+            add_identifier=False
+        elif argv[0]==1:
+            add_identifier=True
+        else:
 
+            print("REVERTING TO DEFAULT PARAMETERS. PLEASE PROVIDE A NUMBER (1 or 0).\n")
+            add_identifier=False
+
+
+    except:
+        print("USING DEFAULT PARAMETERS SINCE NO COMMAND LINE INPUTS WERE FOUND\n")
+
+        add_identifier=False"""
+
+    argv = sys.argv
+    del argv[0]
+    if len(argv) == 0:
+        print("CANNOT RUN PROGRAM, INPUT FILE PARAMETER NOT FOUND\n")
+        exit()
+    elif len(argv) == 1:
+        print("USING DEFAULT VALUE FOR ADD_IDENTIFIER...\n")
+        add_identifier=False
+        try:
+            input_file_folder=argv[0]
+            input_file_list=[]
+            for file in os.listdir(input_file_folder):
+                input_file_list.append(input_file_folder + "/"+file)
+
+        except:
+            print("CANNOT RUN PROGRAM, INPUT FILE PARAMETER UNUSABLE\n")
+            exit()
+    else:
+        print("USING SPECIFIED PARAMETERS...\n")
+        add_identifier=argv[1]
+        try:
+            input_file_folder = argv[0]
+            input_file_list = []
+            for file in os.listdir(input_file_folder):
+                input_file_list.append(input_file_folder + "/" + file)
+
+        except:
+            print("CANNOT RUN PROGRAM, INPUT FILE PARAMETER UNUSABLE\n")
+            exit()
 
 
     """input_file_list = [
@@ -875,18 +937,10 @@ def main():
         "inp_for_circos/short-Grid-Xconj_evol_16c-repeat_1rank-chimbuko_306239-provdb.json",
         "inp_for_circos/short-Grid-Xconj_evol_16c-repeat_1rank-chimbuko_309131-provdb.json",
     ]"""
-    input_file_list = [
+    """input_file_list = [
         "inp_for_circos/Grid-Xconj_evol_16c-repeat_1rank-chimbuko_304740-provdb.json",
         "inp_for_circos/Grid-Xconj_evol_16c-repeat_1rank-chimbuko_306239-provdb.json",
         "inp_for_circos/Grid-Xconj_evol_16c-repeat_1rank-chimbuko_309131-provdb.json",
-    ]
-
-    """input_file_list = [
-        "inp_for_circos/Grid-Xconj_evol_16c-model_reuse-chimbuko_306104-provdb.json",
-        "inp_for_circos/Grid-Xconj_evol_16c-model_reuse-chimbuko_306124-provdb.json",
-
-    "inp_for_circos/Grid-Xconj_evol_16c-model_reuse-chimbuko_306253-provdb.json",
-        "inp_for_circos/Grid-Xconj_evol_16c-model_reuse-chimbuko_309126-provdb.json"
     ]"""
     """input_file_list = [
         "inp_for_circos/Grid-Xconj_evol_16c-repeat_1rank-chimbuko_304740-provdb.json",
@@ -901,11 +955,13 @@ def main():
         #basic_info_to_df(obj, 'filtered_inp_files/'+input_file_list[i][15:75]+'.csv')
 
         print("OUTPUTTING FILES TO UNFILTERED INP FILES FOLDER\n")
-        basic_info_to_df(obj, 'unfiltered_inp_files/' + input_file_list[i][61:63] +'.csv')
-        #basic_info_to_df(obj, 'unfiltered_inp_files/' + input_file_list[i][59:62] + '.csv')
+        if add_identifier == True:
+            basic_info_to_df(obj, 'unfiltered_inp_files/' + input_file_list[i][61:63] + "_"+str(i)+'.csv')
+        else:
+            basic_info_to_df(obj, 'unfiltered_inp_files/' + input_file_list[i][61:63] +'.csv')
     print("CALCULATING EXTENDED INFORMATION\n")
-    extended_info_to_csv(2)
+    extended_info_to_csv(add_identifier)
 
-    #print("GETTING CHORD DATA\n")
-    #get_chord_info()
+    print("GETTING CHORD DATA\n")
+    get_chord_info()
 main()
