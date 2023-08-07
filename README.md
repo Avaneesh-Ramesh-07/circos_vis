@@ -8,12 +8,8 @@ To run the setup script, simply run the command:
 
 ```mermaid
 python setup.py file_name_delimiter
-
-    
 ```
-This takes two parameters explained below:
-
-- file_name_delimiter (required): a number used to output correct file names (run 39 should have file_name_delimter=2, etc.)
+This takes one parameter explained below:
 
 - input folder (required): path to input folder of json dump files
 
@@ -26,8 +22,6 @@ To run the vis script, simply run the command:
 python vis.py force_compute file_name_limit
 ```
 
-This script takes in 2 parameters: force_compute (-f) and file_name_limit explained below:
+This script takes in 1 parameter: force_compute (-f):
 
 - force_compute: optional flag (-f) that tells the program whether to force compute the information for visualization or whether to use cached data. If this is not included, the program will use cached data.
-
-- file_name_limit: a number that represents a file delimeter to accurately interpret files (will recognize '30' in filename 30_func_and_runtime.csv).

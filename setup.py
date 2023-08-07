@@ -694,7 +694,7 @@ def basic_info_to_df(obj, output_file):
     # Useful values(yes, it breaks without the 0.0)
     df.to_csv(output_file)
 
-def extended_info_to_csv(file_name_limit):
+def extended_info_to_csv():
     """
     Outputs files to unshortened and only_rem_duplicates folder
     This removes duplicates and takes the top 10 functions
@@ -704,6 +704,7 @@ def extended_info_to_csv(file_name_limit):
     :return: Nothing, outputsto file
     """
     for file_name in os.listdir("unfiltered_inp_files/"):
+        file_name_limit=0
         df = pd.read_csv("unfiltered_inp_files/" + file_name)
         #df.drop_duplicates(subset='call_stack', inplace=True)
         df.sort_values(by = "exclusive_runtimes", ascending = False, inplace=True)
@@ -715,6 +716,11 @@ def extended_info_to_csv(file_name_limit):
                 df.drop(labels=i, inplace=True)
                 index-=1
             index+=1
+
+        for j in file_name:
+            if j == '.':
+                break
+            file_name_limit += 1
         df.to_csv("filtered_inp_files/only_rem_duplicates/" + file_name[0:file_name_limit] + ".csv")
         df=df.head(10)
 
@@ -866,8 +872,8 @@ def main():
     argv = sys.argv
     del argv[0]
 
-    file_name_delim=int(argv[0])
-    input_folder = argv[1]
+    #file_name_delim=int(argv[0])
+    input_folder = argv[0]
 
     input_file_list=[]
     for file_name in os.listdir(input_folder):
@@ -904,10 +910,10 @@ def main():
         #basic_info_to_df(obj, 'filtered_inp_files/'+input_file_list[i][15:75]+'.csv')
 
         print("OUTPUTTING FILES TO UNFILTERED INP FILES FOLDER\n")
-        basic_info_to_df(obj, 'unfiltered_inp_files/' + input_file_list[i][61:63] +'.csv')
+        #basic_info_to_df(obj, 'unfiltered_inp_files/' + input_file_list[i][61:63] +'.csv')
 
         #HERE YOU NEED TO SPECIFY THE PART OF THE INPUT STRING WHERE THE RUN INFORMATION IS CONTAINED!!!
-        #basic_info_to_df(obj, 'unfiltered_inp_files/' + input_file_list[i][59:62] + '.csv')
+        basic_info_to_df(obj, 'unfiltered_inp_files/' + input_file_list[i][59:62] + '.csv')
     print("CALCULATING EXTENDED INFORMATION\n")
-    extended_info_to_csv(file_name_delim)
+    extended_info_to_csv()
 main()
